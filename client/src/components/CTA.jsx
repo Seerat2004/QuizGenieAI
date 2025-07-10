@@ -1,4 +1,5 @@
 import { Button } from "./ui/button";
+import { Link } from "react-router-dom";
 
 export function CTA() {
   return (
@@ -11,12 +12,14 @@ export function CTA() {
           Join thousands of learners who are already improving their skills with
           QuizGenie AI.
         </p>
-        <Button
-          size="lg"
-          className="bg-white text-purple-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold"
-        >
-          Get Started Now
-        </Button>
+        <Link to="/quizzes">
+          <Button
+            size="lg"
+            className="bg-white text-purple-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold"
+          >
+            Get Started Now
+          </Button>
+        </Link>
       </div>
     </section>
   );

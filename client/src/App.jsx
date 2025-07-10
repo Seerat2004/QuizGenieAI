@@ -6,12 +6,20 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home"; // Removed @/ for consistency
 import NotFound from "./pages/not-found"; // Removed @/ for consistency
+import { SignIn } from "./components/SignIn";
+import {Quizzes} from "./components/Quizzes";
+import { SignUp } from "./components/SignUp";
+import QuizAttempt from "./pages/QuizAttempt";
 
 function Router() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/quizzes" element={<Quizzes />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/quiz-attempt" element={<QuizAttempt />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

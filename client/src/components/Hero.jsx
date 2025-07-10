@@ -1,5 +1,6 @@
 import { Brain, ClipboardList, TrendingUp } from "lucide-react";
 import { Button } from "./ui/button";
+import { Link } from "react-router-dom";
 
 export function Hero() {
   return (
@@ -19,19 +20,23 @@ export function Hero() {
             your learning style.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 px-8 py-4 text-lg font-semibold"
-            >
-              Start Learning Free
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-2 border-purple-500 text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 px-8 py-4 text-lg font-semibold"
-            >
-              Explore Quizzes
-            </Button>
+            <Link to="/signin">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 px-8 py-4 text-lg font-semibold"
+              >
+                Start Learning Free
+              </Button>
+            </Link>
+            <Link to="/quizzes">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-2 border-purple-500 text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 px-8 py-4 text-lg font-semibold"
+              >
+                Explore Quizzes
+              </Button>
+            </Link>
           </div>
         </div>
 
