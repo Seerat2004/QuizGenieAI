@@ -56,10 +56,10 @@ export default function QuizAttempt() {
     setAnswers((prev) => {
       const copy = [...prev];
       copy[current] = selected;
+      // Navigate to result page with quiz and answers
+      navigate('/result', { state: { quiz, answers: copy } });
       return copy;
     });
-    // TODO: Navigate to result page with answers
-    alert('Quiz submitted!');
   };
 
   const q = questions[current];
