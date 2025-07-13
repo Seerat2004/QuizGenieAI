@@ -10,6 +10,7 @@ import { SignIn } from "./components/SignIn";
 import {Quizzes} from "./components/Quizzes";
 import { SignUp } from "./components/SignUp";
 import QuizAttempt from "./pages/QuizAttempt";
+import Result from "./pages/Result";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
         <Route path="/quizzes" element={<Quizzes />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/quiz-attempt" element={<QuizAttempt />} />
+        <Route path="/result" element={<Result />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
