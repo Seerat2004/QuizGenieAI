@@ -1,5 +1,6 @@
 const express = require('express');
 const User = require('../models/User');
+const QuizAttempt = require('../models/QuizAttempt');
 const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
@@ -225,6 +226,26 @@ router.get('/leaderboard', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to get leaderboard'
+    });
+  }
+});
+
+// @route   GET /api/users/attempts
+// @desc    Get user's quiz attempts (history)
+// @access  Private
+router.get('/attempts', protect, async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const attempts = await QuizAttempt.findByUser(req.user._id, { page, limit });
+    res.json({
+      success: true,
+      data: { attempts }
+    });
+  } catch (error) {
+    console.error('Get user attempts error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get user attempts'
     });
   }
 });

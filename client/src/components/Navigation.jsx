@@ -3,12 +3,12 @@ import { Link } from "react-router-dom";
 import { Brain, Menu, X, LogOut } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
-
-// Placeholder for auth state
-const isLoggedIn = false; // Replace with real auth logic
+import { useAuth } from "../contexts/AuthContext";
 
 export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const isLoggedIn = !!user;
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -37,6 +37,14 @@ export function Navigation() {
             >
               Quizzes
             </Link>
+            {isLoggedIn && user?.role === "admin" && (
+              <Link
+                to="/admin"
+                className="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+              >
+                Admin
+              </Link>
+            )}
 
             <ThemeToggle />
 
@@ -58,7 +66,7 @@ export function Navigation() {
               </>
             )}
             {isLoggedIn && (
-              <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white flex items-center gap-2" onClick={() => {/* logout logic */}}>
+              <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white flex items-center gap-2" onClick={logout}>
                 <LogOut className="w-4 h-4" /> Logout
               </Button>
             )}
@@ -92,6 +100,15 @@ export function Navigation() {
             >
               Quizzes
             </Link>
+            {isLoggedIn && user?.role === "admin" && (
+              <Link
+                to="/admin"
+                className="block py-2 text-gray-700 dark:text-gray-300"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Admin
+              </Link>
+            )}
             <div className="py-2">
               <ThemeToggle />
             </div>
@@ -117,7 +134,7 @@ export function Navigation() {
               </>
             )}
             {isLoggedIn && (
-              <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white w-full mt-2 flex items-center gap-2" onClick={() => {/* logout logic */}}>
+              <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white w-full mt-2 flex items-center gap-2" onClick={logout}>
                 <LogOut className="w-4 h-4" /> Logout
               </Button>
             )}

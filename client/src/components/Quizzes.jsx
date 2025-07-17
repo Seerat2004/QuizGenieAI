@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigation } from './Navigation';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import QuizCard from './QuizCard';
 
-// Subject icons
 const subjectIcons = {
   Mathematics: <HelpCircle className="w-8 h-8 text-white" />,
   History: <Trophy className="w-8 h-8 text-white" />,
@@ -19,162 +18,32 @@ export const Quizzes = () => {
   const navigate = useNavigate();
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [quizzesBySubject, setQuizzesBySubject] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Grouped quizzes by subject
-  const quizzesBySubject = {
-    Mathematics: [
-      {
-        title: 'Algebra Basics',
-        description: 'Test your skills in algebraic equations and expressions.',
-        difficulty: 'Easy',
-        icon: subjectIcons.Mathematics,
-        questions: [
-          {
-            question: 'What is the value of x in 2x + 3 = 7?',
-            options: ['1', '2', '3', '4'],
-            answer: 1,
-          },
-          {
-            question: 'Simplify: 3(x + 2) = ?',
-            options: ['3x + 2', '3x + 6', 'x + 5', '6x'],
-            answer: 1,
-          },
-        ],
-      },
-      {
-        title: 'Geometry Fundamentals',
-        description: 'Explore the basics of shapes and angles.',
-        difficulty: 'Medium',
-        icon: subjectIcons.Mathematics,
-        questions: [
-          {
-            question: 'How many degrees are in a triangle?',
-            options: ['90', '180', '270', '360'],
-            answer: 1,
-          },
-          {
-            question: 'What is the area of a circle with radius r?',
-            options: ['2πr', 'πr²', 'πd', 'r²'],
-            answer: 1,
-          },
-        ],
-      },
-    ],
-    History: [
-      {
-        title: 'World History',
-        description: 'Explore important events and figures from world history.',
-        difficulty: 'Medium',
-        icon: subjectIcons.History,
-        questions: [
-          {
-            question: 'Who was the first President of the United States?',
-            options: ['Abraham Lincoln', 'George Washington', 'John Adams', 'Thomas Jefferson'],
-            answer: 1,
-          },
-          {
-            question: 'In which year did World War II end?',
-            options: ['1942', '1945', '1939', '1950'],
-            answer: 1,
-          },
-        ],
-      },
-      {
-        title: 'Ancient Civilizations',
-        description: 'Test your knowledge of ancient cultures and empires.',
-        difficulty: 'Hard',
-        icon: subjectIcons.History,
-        questions: [
-          {
-            question: 'Which civilization built the pyramids?',
-            options: ['Romans', 'Greeks', 'Egyptians', 'Persians'],
-            answer: 2,
-          },
-          {
-            question: 'The Great Wall is located in which country?',
-            options: ['India', 'China', 'Japan', 'Korea'],
-            answer: 1,
-          },
-        ],
-      },
-    ],
-    Science: [
-      {
-        title: 'Physics Fundamentals',
-        description: 'Challenge yourself with basic physics concepts.',
-        difficulty: 'Hard',
-        icon: subjectIcons.Science,
-        questions: [
-          {
-            question: 'What is the unit of force?',
-            options: ['Joule', 'Newton', 'Watt', 'Pascal'],
-            answer: 1,
-          },
-          {
-            question: 'Who formulated the laws of motion?',
-            options: ['Einstein', 'Newton', 'Galileo', 'Tesla'],
-            answer: 1,
-          },
-        ],
-      },
-      {
-        title: 'Biology Basics',
-        description: 'Learn about living organisms and their functions.',
-        difficulty: 'Easy',
-        icon: subjectIcons.Science,
-        questions: [
-          {
-            question: 'What is the basic unit of life?',
-            options: ['Atom', 'Cell', 'Molecule', 'Organ'],
-            answer: 1,
-          },
-          {
-            question: 'Which organ pumps blood?',
-            options: ['Liver', 'Heart', 'Lung', 'Brain'],
-            answer: 1,
-          },
-        ],
-      },
-    ],
-    Literature: [
-      {
-        title: 'Literary Classics',
-        description: 'Questions about famous books and authors.',
-        difficulty: 'Medium',
-        icon: subjectIcons.Literature,
-        questions: [
-          {
-            question: 'Who wrote "Pride and Prejudice"?',
-            options: ['Jane Austen', 'Emily Brontë', 'Charles Dickens', 'Mark Twain'],
-            answer: 0,
-          },
-          {
-            question: '"To be, or not to be" is a quote from which play?',
-            options: ['Macbeth', 'Hamlet', 'Othello', 'King Lear'],
-            answer: 1,
-          },
-        ],
-      },
-      {
-        title: 'Modern Poetry',
-        description: 'Explore the world of 20th-century poetry.',
-        difficulty: 'Medium',
-        icon: subjectIcons.Literature,
-        questions: [
-          {
-            question: 'Who wrote "The Waste Land"?',
-            options: ['T.S. Eliot', 'Robert Frost', 'Sylvia Plath', 'W.B. Yeats'],
-            answer: 0,
-          },
-          {
-            question: 'Which poet is known for "Leaves of Grass"?',
-            options: ['Emily Dickinson', 'Walt Whitman', 'Langston Hughes', 'Carl Sandburg'],
-            answer: 1,
-          },
-        ],
-      },
-    ],
-  };
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/quizzes')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch quizzes');
+        return res.json();
+      })
+      .then(data => {
+        // Group quizzes by subject
+        const grouped = {};
+        data.forEach(quiz => {
+          if (!grouped[quiz.subject]) grouped[quiz.subject] = [];
+          grouped[quiz.subject].push(quiz);
+        });
+        setQuizzesBySubject(grouped);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
 
   // Stats (unchanged)
   const stats = [
@@ -282,24 +151,30 @@ export const Quizzes = () => {
 
         {/* Available Subjects */}
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Available Subjects</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {Object.keys(quizzesBySubject).map((subject, i) => (
-            <motion.div
-              key={subject}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * i, duration: 0.5 }}
-              className="rounded-2xl bg-gradient-to-br from-[#e0d7fa] to-[#f6c1e7] dark:from-[#2d185a] dark:to-[#1a1a2e] p-8 flex flex-col items-center relative shadow-lg transition-colors duration-300 cursor-pointer hover:scale-105"
-              onClick={() => handleOpenSubject(subject)}
-            >
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-4">
-                {subjectIcons[subject]}
-              </div>
-              <div className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">{subject}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-300 text-center">{quizzesBySubject[subject].length} quizzes</div>
-            </motion.div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center text-lg text-gray-500 dark:text-gray-400">Loading quizzes...</div>
+        ) : error ? (
+          <div className="text-center text-lg text-red-500">{error}</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {Object.keys(quizzesBySubject).map((subject, i) => (
+              <motion.div
+                key={subject}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 * i, duration: 0.5 }}
+                className="rounded-2xl bg-gradient-to-br from-[#e0d7fa] to-[#f6c1e7] dark:from-[#2d185a] dark:to-[#1a1a2e] p-8 flex flex-col items-center relative shadow-lg transition-colors duration-300 cursor-pointer hover:scale-105"
+                onClick={() => handleOpenSubject(subject)}
+              >
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-4">
+                  {subjectIcons[subject]}
+                </div>
+                <div className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">{subject}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-300 text-center">{quizzesBySubject[subject].length} quizzes</div>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         {/* Modal for quizzes in selected subject */}
         <AnimatePresence>
@@ -330,12 +205,12 @@ export const Quizzes = () => {
                 <div className="grid gap-6">
                   {quizzesBySubject[selectedSubject].map((quiz, idx) => (
                     <QuizCard
-                      key={quiz.title}
+                      key={quiz._id || quiz.title}
                       title={quiz.title}
                       topic={selectedSubject}
                       description={quiz.description}
                       difficulty={quiz.difficulty}
-                      icon={quiz.icon}
+                      icon={subjectIcons[selectedSubject]}
                       onStart={() => handleStartQuiz({ ...quiz, topic: selectedSubject })}
                     />
                   ))}
@@ -349,4 +224,4 @@ export const Quizzes = () => {
   );
 };
 
-export default Quizzes;
+export default Quizzes; 
