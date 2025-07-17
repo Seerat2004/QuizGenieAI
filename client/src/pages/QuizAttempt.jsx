@@ -8,25 +8,46 @@ import { useLocation, useNavigate } from 'react-router-dom';
 export default function QuizAttempt() {
   const location = useLocation();
   const navigate = useNavigate();
-  const quiz = location.state?.quiz;
+  let quiz = location.state?.quiz;
+  const attemptId = location.state?.attemptId;
 
-  // Fallback if no quiz is provided
-  if (!quiz) {
+  // Defensive: If quiz, quiz.questions, or attemptId is missing, show fallback
+  if (!quiz || !Array.isArray(quiz.questions) || quiz.questions.length === 0 || !attemptId) {
     return (
       <div className="min-h-screen bg-[#f6f7fb] dark:bg-[#10182A] flex items-center justify-center">
         <Navigation />
         <div className="text-center mt-32">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">No quiz selected</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">No quiz selected or quiz has no questions</h2>
           <Button onClick={() => navigate('/quizzes')}>Go to Quizzes</Button>
         </div>
       </div>
     );
   }
 
+  // Map backend quiz format to frontend format if needed
+  if (
+    quiz.questions.length > 0 &&
+    quiz.questions[0] &&
+    typeof quiz.questions[0] === 'object' &&
+    'text' in quiz.questions[0] &&
+    Array.isArray(quiz.questions[0].answers)
+  ) {
+    quiz = {
+      ...quiz,
+      questions: quiz.questions.map(q => ({
+        question: q.text,
+        options: Array.isArray(q.answers) ? q.answers.map(a => a.text) : [],
+        correctIndex: Array.isArray(q.answers) ? q.answers.findIndex(a => a.isCorrect) : -1,
+        explanation: q.explanation || '',
+      }))
+    };
+  }
+
   const { questions, title, topic } = quiz;
   const QUESTION_TIME = 30;
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState(null);
+  // Track answers as array of { questionId, selectedAnswer }
   const [answers, setAnswers] = useState([]);
   const [timer, setTimer] = useState(QUESTION_TIME);
 
@@ -46,23 +67,48 @@ export default function QuizAttempt() {
   const handleNext = () => {
     setAnswers((prev) => {
       const copy = [...prev];
-      copy[current] = selected;
+      copy[current] = { questionId: q._id, selectedAnswer: q.options[selected] };
       return copy;
     });
     setCurrent((c) => c + 1);
   };
   const handlePrev = () => setCurrent((c) => c - 1);
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setAnswers((prev) => {
       const copy = [...prev];
-      copy[current] = selected;
-      // Navigate to result page with quiz and answers
-      navigate('/result', { state: { quiz, answers: copy } });
+      copy[current] = { questionId: q._id, selectedAnswer: q.options[selected] };
       return copy;
     });
+    try {
+      const res = await fetch(`/api/quizzes/${quiz._id}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ attemptId, answers: answers.map(a => a || { questionId: '', selectedAnswer: '' }) })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Failed to submit quiz');
+      navigate('/result', { state: { quizId: quiz._id, attemptId } });
+    } catch (err) {
+      alert(err.message || 'Failed to submit quiz');
+    }
   };
 
   const q = questions[current];
+
+  // Defensive: If q or q.options is missing or not an array, show fallback
+  if (!q || !Array.isArray(q.options) || q.options.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#f6f7fb] dark:bg-[#10182A] flex items-center justify-center">
+        <Navigation />
+        <div className="text-center mt-32">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">This quiz has a malformed question or options.</h2>
+          <Button onClick={() => navigate('/quizzes')}>Go to Quizzes</Button>
+        </div>
+      </div>
+    );
+  }
+
   const isLast = current === questions.length - 1;
   const isFirst = current === 0;
 

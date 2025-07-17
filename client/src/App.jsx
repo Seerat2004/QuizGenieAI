@@ -7,10 +7,28 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home"; // Removed @/ for consistency
 import NotFound from "./pages/not-found"; // Removed @/ for consistency
 import { SignIn } from "./components/SignIn";
-import {Quizzes} from "./components/Quizzes";
+import Quizzes from "./pages/Quizzes";
 import { SignUp } from "./components/SignUp";
 import QuizAttempt from "./pages/QuizAttempt";
 import Result from "./pages/Result";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { Navigate } from "react-router-dom";
+import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+
+function RequireAuth({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return null; // or a loading spinner
+  if (!user) return <Navigate to="/signin" replace />;
+  return children;
+}
+
+function RequireAdmin({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user || user.role !== "admin") return <Navigate to="/" replace />;
+  return children;
+}
 
 function Router() {
   return (
@@ -20,8 +38,10 @@ function Router() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/quizzes" element={<Quizzes />} />
         <Route path="/signup" element={<SignUp />} />
-        <Route path="/quiz-attempt" element={<QuizAttempt />} />
-        <Route path="/result" element={<Result />} />
+        <Route path="/quiz-attempt" element={<RequireAuth><QuizAttempt /></RequireAuth>} />
+        <Route path="/result" element={<RequireAuth><Result /></RequireAuth>} />
+        <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+        <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
@@ -31,12 +51,14 @@ function Router() {
 function App() {
   return (
     <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </QueryClientProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Router />
+            <Toaster />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

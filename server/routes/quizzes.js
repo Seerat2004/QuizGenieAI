@@ -198,12 +198,15 @@ router.post('/:id/start', protect, async (req, res) => {
 
     await attempt.save();
 
-    // Return quiz without answers
-    const quizWithoutAnswers = {
+    // Return quiz with options (not answers)
+    const quizWithOptions = {
       ...quiz.toObject(),
       questions: quiz.questions.map(q => ({
-        ...q,
-        answers: undefined
+        _id: q._id,
+        text: q.text,
+        options: q.answers.map(a => a.text),
+        explanation: q.explanation,
+        points: q.points
       }))
     };
 
@@ -211,7 +214,7 @@ router.post('/:id/start', protect, async (req, res) => {
       success: true,
       message: 'Quiz started successfully',
       data: {
-        quiz: quizWithoutAnswers,
+        quiz: quizWithOptions,
         attemptId: attempt._id
       }
     });
@@ -337,172 +340,48 @@ router.post('/:id/submit', protect, [
 
 // Admin routes for quiz management
 // @route   POST /api/quizzes
-// @desc    Create a new quiz (admin/teacher only)
-// @access  Private/Admin/Teacher
-router.post('/', protect, authorize('admin', 'teacher'), [
-  body('title')
-    .trim()
-    .isLength({ min: 1, max: 200 })
-    .withMessage('Title is required and must be less than 200 characters'),
-  body('description')
-    .trim()
-    .isLength({ min: 1, max: 1000 })
-    .withMessage('Description is required and must be less than 1000 characters'),
-  body('subject')
-    .isIn(['Mathematics', 'Science', 'History', 'Geography', 'Literature', 'Computer Science', 'General Knowledge'])
-    .withMessage('Invalid subject'),
-  body('difficulty')
-    .isIn(['Easy', 'Medium', 'Hard'])
-    .withMessage('Invalid difficulty level'),
-  body('questions')
-    .isArray({ min: 1 })
-    .withMessage('At least one question is required'),
-  body('questions.*.text')
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Question text is required'),
-  body('questions.*.answers')
-    .isArray({ min: 2, max: 4 })
-    .withMessage('Each question must have 2-4 answers'),
-  body('questions.*.answers.*.text')
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Answer text is required'),
-  body('questions.*.answers.*.isCorrect')
-    .isBoolean()
-    .withMessage('isCorrect must be a boolean')
-], async (req, res) => {
+// @desc    Create a new quiz (admin only)
+// @access  Admin
+router.post('/', protect, authorize('admin'), async (req, res) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
-
-    const { title, description, subject, difficulty, questions, timeLimit } = req.body;
-
-    // Validate that each question has exactly one correct answer
-    for (let i = 0; i < questions.length; i++) {
-      const correctAnswers = questions[i].answers.filter(a => a.isCorrect);
-      if (correctAnswers.length !== 1) {
-        return res.status(400).json({
-          success: false,
-          message: `Question ${i + 1} must have exactly one correct answer`
-        });
-      }
-    }
-
-    const quiz = new Quiz({
-      title,
-      description,
-      subject,
-      difficulty,
-      questions,
-      timeLimit,
-      createdBy: req.user._id
-    });
-
+    const quiz = new Quiz(req.body);
     await quiz.save();
-
-    res.status(201).json({
-      success: true,
-      message: 'Quiz created successfully',
-      data: {
-        quiz: quiz.toObject()
-      }
-    });
+    res.status(201).json({ success: true, data: quiz });
   } catch (error) {
     console.error('Create quiz error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create quiz'
-    });
+    res.status(500).json({ success: false, message: 'Failed to create quiz' });
   }
 });
 
 // @route   PUT /api/quizzes/:id
-// @desc    Update quiz (admin/teacher only)
-// @access  Private/Admin/Teacher
-router.put('/:id', protect, authorize('admin', 'teacher'), async (req, res) => {
+// @desc    Edit a quiz (admin only)
+// @access  Admin
+router.put('/:id', protect, authorize('admin'), async (req, res) => {
   try {
-    const quiz = await Quiz.findById(req.params.id);
-    
+    const quiz = await Quiz.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!quiz) {
-      return res.status(404).json({
-        success: false,
-        message: 'Quiz not found'
-      });
+      return res.status(404).json({ success: false, message: 'Quiz not found' });
     }
-
-    // Check if user is the creator or admin
-    if (quiz.createdBy.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to update this quiz'
-      });
-    }
-
-    const updatedQuiz = await Quiz.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-
-    res.json({
-      success: true,
-      message: 'Quiz updated successfully',
-      data: {
-        quiz: updatedQuiz
-      }
-    });
+    res.json({ success: true, data: quiz });
   } catch (error) {
-    console.error('Update quiz error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update quiz'
-    });
+    console.error('Edit quiz error:', error);
+    res.status(500).json({ success: false, message: 'Failed to edit quiz' });
   }
 });
 
 // @route   DELETE /api/quizzes/:id
-// @desc    Delete quiz (admin/teacher only)
-// @access  Private/Admin/Teacher
-router.delete('/:id', protect, authorize('admin', 'teacher'), async (req, res) => {
+// @desc    Delete a quiz (admin only)
+// @access  Admin
+router.delete('/:id', protect, authorize('admin'), async (req, res) => {
   try {
-    const quiz = await Quiz.findById(req.params.id);
-    
+    const quiz = await Quiz.findByIdAndDelete(req.params.id);
     if (!quiz) {
-      return res.status(404).json({
-        success: false,
-        message: 'Quiz not found'
-      });
+      return res.status(404).json({ success: false, message: 'Quiz not found' });
     }
-
-    // Check if user is the creator or admin
-    if (quiz.createdBy.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to delete this quiz'
-      });
-    }
-
-    // Soft delete - set isActive to false
-    await Quiz.findByIdAndUpdate(req.params.id, { isActive: false });
-
-    res.json({
-      success: true,
-      message: 'Quiz deleted successfully'
-    });
+    res.json({ success: true, message: 'Quiz deleted' });
   } catch (error) {
     console.error('Delete quiz error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete quiz'
-    });
+    res.status(500).json({ success: false, message: 'Failed to delete quiz' });
   }
 });
 

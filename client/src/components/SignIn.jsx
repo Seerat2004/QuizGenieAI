@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, Brain } from 'lucide-react';
 import { Navigation } from './Navigation';
+import { useAuth } from "../contexts/AuthContext";
 
 export const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,6 +15,10 @@ export const SignIn = () => {
     email: '',
     password: ''
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -23,22 +28,42 @@ export const SignIn = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle sign in logic here
-    console.log('Sign in attempt:', formData);
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.message || 'Login failed');
+        setLoading(false);
+        return;
+      }
+      // Store token in cookie (expires in 7 days)
+      document.cookie = `token=${data.data.token}; path=/; max-age=${60 * 60 * 24 * 7}`;
+      // Optionally, redirect to home or dashboard
+      navigate('/');
+      login(data.data.user);
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-black dark:to-gray-900">
       <Navigation />
-      
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
       </div>
-
       <div className="relative z-10 flex items-center justify-center min-h-screen px-4 py-12 pt-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -61,7 +86,6 @@ export const SignIn = () => {
               Back to Home
             </Link>
           </motion.div>
-
           {/* Logo */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -79,7 +103,6 @@ export const SignIn = () => {
               Sign in to your QuizGenie AI account
             </p>
           </motion.div>
-
           {/* Sign In Form */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -116,7 +139,6 @@ export const SignIn = () => {
                       />
                     </div>
                   </div>
-
                   {/* Password Field */}
                   <div className="space-y-2">
                     <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">
@@ -143,7 +165,6 @@ export const SignIn = () => {
                       </button>
                     </div>
                   </div>
-
                   {/* Remember Me & Forgot Password */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -163,15 +184,16 @@ export const SignIn = () => {
                       Forgot password?
                     </Link>
                   </div>
-
+                  {/* Error Message */}
+                  {error && <div className="text-red-500 text-center text-sm font-medium">{error}</div>}
                   {/* Sign In Button */}
                   <Button
                     type="submit"
                     className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 py-3 text-lg font-semibold transition-all duration-200 transform hover:scale-105"
+                    disabled={loading}
                   >
-                    Sign In
+                    {loading ? 'Signing In...' : 'Sign In'}
                   </Button>
-
                   {/* Divider */}
                   <div className="relative my-6">
                     <div className="absolute inset-0 flex items-center">
@@ -181,7 +203,6 @@ export const SignIn = () => {
                       <span className="px-2 bg-white dark:bg-black text-gray-500">Or continue with</span>
                     </div>
                   </div>
-
                   {/* Social Sign In Buttons */}
                   <div className="grid grid-cols-2 gap-3">
                     <Button
@@ -206,7 +227,6 @@ export const SignIn = () => {
                       Twitter
                     </Button>
                   </div>
-
                   {/* Sign Up Link */}
                   <div className="text-center">
                     <span className="text-gray-600 dark:text-gray-400">

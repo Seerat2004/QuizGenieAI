@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,16 +7,23 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, User, Brain } from 'lucide-react';
 import { Navigation } from './Navigation';
+import { useAuth } from "../contexts/AuthContext";
 
 export const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    username: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    firstName: '',
+    lastName: ''
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -26,10 +33,44 @@ export const SignUp = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle sign up logic here
-    console.log('Sign up attempt:', formData);
+    setError('');
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    setLoading(true);
+    try {
+      // Map frontend fields to backend expected fields
+      const payload = {
+        username: formData.username || formData.email.split('@')[0],
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName || formData.username || formData.email.split('@')[0],
+        lastName: formData.lastName || ''
+      };
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.message || 'Registration failed');
+        setLoading(false);
+        return;
+      }
+      // Store token in cookie (expires in 7 days)
+      document.cookie = `token=${data.data.token}; path=/; max-age=${60 * 60 * 24 * 7}`;
+      // Optionally, redirect to home or dashboard
+      navigate('/');
+      login(data.data.user);
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -96,21 +137,57 @@ export const SignUp = () => {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Name Field */}
+                  {/* Username Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-gray-700 dark:text-gray-300">
-                      Name
+                    <Label htmlFor="username" className="text-gray-700 dark:text-gray-300">
+                      Username
                     </Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <Input
-                        id="name"
-                        name="name"
+                        id="username"
+                        name="username"
                         type="text"
-                        placeholder="Enter your name"
-                        value={formData.name}
+                        placeholder="Enter your username"
+                        value={formData.username}
                         onChange={handleInputChange}
                         className="pl-10 bg-white/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 focus:border-purple-500 dark:focus:border-purple-400"
+                        required
+                      />
+                    </div>
+                  </div>
+                  {/* First Name Field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName" className="text-gray-700 dark:text-gray-300">
+                      First Name
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="firstName"
+                        name="firstName"
+                        type="text"
+                        placeholder="Enter your first name"
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        className="pl-4 bg-white/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 focus:border-purple-500 dark:focus:border-purple-400"
+                        required
+                      />
+                    </div>
+                  </div>
+                  {/* Last Name Field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName" className="text-gray-700 dark:text-gray-300">
+                      Last Name
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="lastName"
+                        name="lastName"
+                        type="text"
+                        placeholder="Enter your last name"
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        className="pl-4 bg-white/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 focus:border-purple-500 dark:focus:border-purple-400"
                         required
                       />
                     </div>
@@ -186,12 +263,15 @@ export const SignUp = () => {
                       </button>
                     </div>
                   </div>
+                  {/* Error Message */}
+                  {error && <div className="text-red-500 text-center text-sm font-medium">{error}</div>}
                   {/* Sign Up Button */}
                   <Button
                     type="submit"
                     className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 py-3 text-lg font-semibold transition-all duration-200 transform hover:scale-105"
+                    disabled={loading}
                   >
-                    Sign Up
+                    {loading ? 'Signing Up...' : 'Sign Up'}
                   </Button>
                   {/* Already have an account? */}
                   <div className="text-center mt-4">
