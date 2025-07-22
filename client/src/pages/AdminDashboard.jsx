@@ -268,6 +268,7 @@ export default function AdminDashboard() {
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-purple-700 dark:text-pink-400">All Users</h2>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mr-4">Search is client-side and only works for loaded users.</div>
               <Input
                 value={userSearch}
                 onChange={e => setUserSearch(e.target.value)}
@@ -312,6 +313,7 @@ export default function AdminDashboard() {
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-purple-700 dark:text-pink-400">All Quiz Attempts</h2>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mr-4">Search is client-side and only works for loaded attempts.</div>
               <Input
                 value={attemptSearch}
                 onChange={e => setAttemptSearch(e.target.value)}

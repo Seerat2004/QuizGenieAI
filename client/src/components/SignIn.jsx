@@ -36,19 +36,19 @@ export const SignIn = () => {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(formData)
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message || 'Login failed');
+        setError(data.message || (data.errors && data.errors[0]?.msg) || 'Login failed');
         setLoading(false);
         return;
       }
-      // Store token in cookie (expires in 7 days)
-      document.cookie = `token=${data.data.token}; path=/; max-age=${60 * 60 * 24 * 7}`;
+      // Only set token cookie if not already set by backend
       // Optionally, redirect to home or dashboard
-      navigate('/');
       login(data.data.user);
+      navigate('/');
     } catch (err) {
       setError('Network error. Please try again.');
     } finally {
@@ -99,7 +99,7 @@ export const SignIn = () => {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Welcome Back
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className="text-gray-600 dark:text-white-400 mt-2">
               Sign in to your QuizGenie AI account
             </p>
           </motion.div>
@@ -122,11 +122,11 @@ export const SignIn = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Email Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-gray-700 dark:text-gray-300">
+                    <Label htmlFor="email" className="text-gray-700 dark:text-white-300">
                       Email Address
                     </Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white-400" />
                       <Input
                         id="email"
                         name="email"
