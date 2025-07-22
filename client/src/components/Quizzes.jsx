@@ -101,7 +101,7 @@ export const Quizzes = () => {
 
   return (
     <div className="min-h-screen bg-[#f6f7fb] dark:bg-[#10182A] transition-colors duration-300">
-      <Navigation />
+        <Navigation />
       <main className="max-w-7xl mx-auto px-4 pt-8 pb-16">
         {/* Welcome */}
         <motion.div
@@ -171,7 +171,7 @@ export const Quizzes = () => {
                 </div>
                 <div className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">{subject}</div>
                 <div className="text-sm text-gray-600 dark:text-gray-300 text-center">{quizzesBySubject[subject].length} quizzes</div>
-              </motion.div>
+          </motion.div>
             ))}
           </div>
         )}

@@ -74,21 +74,20 @@ export default function QuizAttempt() {
   };
   const handlePrev = () => setCurrent((c) => c - 1);
   const handleSubmit = async () => {
-    setAnswers((prev) => {
-      const copy = [...prev];
-      copy[current] = { questionId: q._id, selectedAnswer: q.options[selected] };
-      return copy;
-    });
+    // Save the last answer
+    const updatedAnswers = [...answers];
+    updatedAnswers[current] = { questionId: q._id, selectedAnswer: q.options[selected] };
     try {
       const res = await fetch(`/api/quizzes/${quiz._id}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ attemptId, answers: answers.map(a => a || { questionId: '', selectedAnswer: '' }) })
+        body: JSON.stringify({ attemptId, answers: updatedAnswers.map(a => a || { questionId: '', selectedAnswer: '' }) })
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Failed to submit quiz');
-      navigate('/result', { state: { quizId: quiz._id, attemptId } });
+      // After submit, navigate to result and trigger dashboard refresh
+      navigate('/result', { state: { quizId: quiz._id, attemptId, refreshDashboard: true } });
     } catch (err) {
       alert(err.message || 'Failed to submit quiz');
     }
@@ -115,7 +114,7 @@ export default function QuizAttempt() {
   return (
     <div className="min-h-screen bg-[#f6f7fb] dark:bg-[#10182A] transition-colors duration-300">
       <Navigation />
-      <main className="max-w-xl mx-auto px-4 pt-20 pb-16">
+      <main className="max-w-xl mx-auto px-4 pt-32 pb-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -141,7 +140,9 @@ export default function QuizAttempt() {
             transition={{ duration: 0.4 }}
             className="mb-8"
           >
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{q.question}</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
+              {q.question || q.text || <span className="text-red-500">(No question text provided)</span>}
+            </h2>
             <div className="grid gap-4">
               {q.options.map((opt, idx) => (
                 <Button

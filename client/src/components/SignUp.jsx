@@ -53,19 +53,19 @@ export const SignUp = () => {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message || 'Registration failed');
+        setError(data.message || (data.errors && data.errors[0]?.msg) || 'Registration failed');
         setLoading(false);
         return;
       }
-      // Store token in cookie (expires in 7 days)
-      document.cookie = `token=${data.data.token}; path=/; max-age=${60 * 60 * 24 * 7}`;
+      // Only set token cookie if not already set by backend
       // Optionally, redirect to home or dashboard
-      navigate('/');
       login(data.data.user);
+      navigate('/');
     } catch (err) {
       setError('Network error. Please try again.');
     } finally {
@@ -139,11 +139,11 @@ export const SignUp = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Username Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="username" className="text-gray-700 dark:text-gray-300">
+                    <Label htmlFor="username" className="text-gray-700 dark:text-white-300">
                       Username
                     </Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white-400" />
                       <Input
                         id="username"
                         name="username"
