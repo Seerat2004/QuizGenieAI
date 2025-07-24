@@ -37,7 +37,10 @@ export const Quizzes = () => {
     setLoading(true);
     setError(null);
     fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/quizzes`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch quizzes: ' + res.status);
+        return res.json();
+      })
       .then(data => {
         if (!data.success) throw new Error('Failed to fetch quizzes');
         // Group quizzes by subject
@@ -59,7 +62,10 @@ export const Quizzes = () => {
     if (!user) return;
     // Fetch user stats
     fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/users/stats`, { credentials: 'include' })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch stats: ' + res.status);
+        return res.json();
+      })
       .then(data => {
         if (!data.success) throw new Error('Failed to fetch stats');
         const s = data.data.stats;
@@ -73,7 +79,10 @@ export const Quizzes = () => {
       .catch(() => {});
     // Fetch leaderboard to get user rank
     fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/users/leaderboard?limit=100`, { credentials: 'include' })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch leaderboard: ' + res.status);
+        return res.json();
+      })
       .then(data => {
         if (!data.success) throw new Error('Failed to fetch leaderboard');
         const leaderboard = data.data.leaderboard;

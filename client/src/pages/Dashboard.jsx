@@ -43,6 +43,8 @@ export default function Dashboard() {
         fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/users/stats`, { credentials: "include" }),
         fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/users/leaderboard?limit=100`, { credentials: "include" })
       ]);
+      if (!statsRes.ok) throw new Error('Failed to fetch stats: ' + statsRes.status);
+      if (!lbRes.ok) throw new Error('Failed to fetch leaderboard: ' + lbRes.status);
       const statsData = await statsRes.json();
       const lbData = await lbRes.json();
       if (!statsData.success) throw new Error(statsData.message || "Failed to fetch stats");
@@ -68,7 +70,10 @@ export default function Dashboard() {
   const fetchAttempts = () => {
     setLoading(true);
     fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/users/attempts`, { credentials: "include" })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch attempts: ' + res.status);
+        return res.json();
+      })
       .then((data) => {
         if (!data.success) throw new Error(data.message || "Failed to fetch attempts");
         setAttempts(data.data.attempts);

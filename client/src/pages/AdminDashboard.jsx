@@ -58,7 +58,10 @@ export default function AdminDashboard() {
     setError("");
     if (tab === "users") {
       fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/admin/users`, { credentials: "include" })
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to fetch users: ' + res.status);
+          return res.json();
+        })
         .then((data) => {
           if (data.success) setUsers(data.data);
           else setError(data.message || "Failed to fetch users");
@@ -70,7 +73,10 @@ export default function AdminDashboard() {
         });
     } else if (tab === "attempts") {
       fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/admin/attempts`, { credentials: "include" })
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to fetch attempts: ' + res.status);
+          return res.json();
+        })
         .then((data) => {
           if (data.success) setAttempts(data.data);
           else setError(data.message || "Failed to fetch attempts");
@@ -89,7 +95,10 @@ export default function AdminDashboard() {
     setQuizLoading(true);
     setQuizError("");
     fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/quizzes?limit=1000`, { credentials: "include" })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch quizzes: ' + res.status);
+        return res.json();
+      })
       .then(data => {
         if (data.success) setQuizzes(data.data.quizzes);
         else setQuizError(data.message || "Failed to fetch quizzes");

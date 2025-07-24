@@ -95,6 +95,7 @@ export default function QuizAttempt() {
         credentials: 'include',
         body: JSON.stringify({ attemptId, answers: updatedAnswers.filter(a => a && a.questionId && typeof a.selectedAnswer === 'string' && a.selectedAnswer.length > 0) })
       });
+      if (!res.ok) throw new Error('Failed to submit quiz: ' + res.status);
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Failed to submit quiz');
       // Poll for AI feedback before navigating
@@ -104,6 +105,7 @@ export default function QuizAttempt() {
       const poll = async () => {
         tries++;
         const res = await fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/quizzes/${quiz._id}/result/${attemptId}`, { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to fetch result: ' + res.status);
         const resultData = await res.json();
         if (resultData.success && resultData.data && resultData.data.aiAnalysis && Object.keys(resultData.data.aiAnalysis).length > 0 && resultData.data.aiAnalysis.overallFeedback && resultData.data.aiAnalysis.detailedFeedback) {
           setAiLoading(false);

@@ -53,7 +53,10 @@ export default function Result() {
       return;
     }
     fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/quizzes/${quizId}/result/${attemptId}`, { credentials: 'include' })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch result: ' + res.status);
+        return res.json();
+      })
       .then(data => {
         if (!data.success) throw new Error(data.message || 'Failed to fetch result');
         if (isMounted) {
