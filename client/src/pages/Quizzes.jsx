@@ -33,6 +33,7 @@ export const Quizzes = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
+    console.log("API Base URL:", import.meta.env.VITE_REACT_APP_API_BASE_URL);
     setLoading(true);
     setError(null);
     fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/quizzes`)
