@@ -40,8 +40,8 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const [statsRes, lbRes] = await Promise.all([
-        fetch(`${process.env.REACT_APP_API_BASE_URL}/api/users/stats`, { credentials: "include" }),
-        fetch(`${process.env.REACT_APP_API_BASE_URL}/api/users/leaderboard?limit=100`, { credentials: "include" })
+        fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/users/stats`, { credentials: "include" }),
+        fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/users/leaderboard?limit=100`, { credentials: "include" })
       ]);
       const statsData = await statsRes.json();
       const lbData = await lbRes.json();
@@ -67,7 +67,7 @@ export default function Dashboard() {
 
   const fetchAttempts = () => {
     setLoading(true);
-    fetch(`${process.env.REACT_APP_API_BASE_URL}/api/users/attempts`, { credentials: "include" })
+    fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/users/attempts`, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         if (!data.success) throw new Error(data.message || "Failed to fetch attempts");

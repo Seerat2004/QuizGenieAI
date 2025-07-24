@@ -9,7 +9,7 @@ async function throwIfResNotOk(res) {
 
 function withApiBase(url) {
   if (url.startsWith('http')) return url;
-  return `${process.env.REACT_APP_API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  return `${import.meta.env.VITE_REACT_APP_API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 }
 
 export async function apiRequest(method, url, data) {

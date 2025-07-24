@@ -10,7 +10,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     // Always check session on mount
-    fetch(`${process.env.REACT_APP_API_BASE_URL}/api/auth/me`, { credentials: "include" })
+    fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/auth/me`, { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         setUser(data?.data?.user || null);

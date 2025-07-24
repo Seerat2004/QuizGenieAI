@@ -50,7 +50,7 @@ export const SignUp = () => {
         firstName: formData.firstName || formData.username || formData.email.split('@')[0],
         lastName: formData.lastName || ''
       };
-      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/auth/register`, {
+      const res = await fetch(`${import.meta.env.VITE_REACT_APP_API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
