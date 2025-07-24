@@ -93,8 +93,8 @@ router.post('/register', validateRegistration, async (req, res) => {
 
     res.cookie('token', token, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+      secure: true,
       maxAge: 24 * 60 * 60 * 1000 // 1 day
     });
 
@@ -168,8 +168,8 @@ router.post('/login', validateLogin, async (req, res) => {
 
     res.cookie('token', token, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+      secure: true,
       maxAge: 24 * 60 * 60 * 1000 // 1 day
     });
 
