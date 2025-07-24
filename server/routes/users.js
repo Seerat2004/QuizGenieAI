@@ -61,7 +61,8 @@ router.get('/stats', protect, async (req, res) => {
       averageScore: 0,
       totalQuestions: 0,
       subjectsTaken: new Set(),
-      recentActivity: []
+      recentActivity: [],
+      streak: 0 // new field
     };
 
     if (user.quizHistory.length > 0) {
@@ -74,6 +75,28 @@ router.get('/stats', protect, async (req, res) => {
       stats.recentActivity = user.quizHistory
         .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
         .slice(0, 5);
+
+      // Calculate streak (consecutive days with completed quizzes)
+      const sorted = user.quizHistory
+        .filter(q => q.completedAt)
+        .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+      let streak = 0;
+      let prev = null;
+      for (let i = 0; i < sorted.length; i++) {
+        const curr = new Date(sorted[i].completedAt);
+        if (i === 0) {
+          streak = 1;
+        } else {
+          const diff = (prev - curr) / (1000 * 60 * 60 * 24);
+          if (diff <= 1.1 && diff >= 0.9) {
+            streak++;
+          } else {
+            break;
+          }
+        }
+        prev = curr;
+      }
+      stats.streak = streak;
     }
 
     res.json({
@@ -144,7 +167,7 @@ router.put('/preferences', protect, async (req, res) => {
 // @route   GET /api/users/leaderboard
 // @desc    Get leaderboard (top performers)
 // @access  Public (with optional auth)
-router.get('/leaderboard', async (req, res) => {
+router.get('/leaderboard', protect, async (req, res) => {
   try {
     const { limit = 10, subject } = req.query;
     
@@ -215,10 +238,45 @@ router.get('/leaderboard', async (req, res) => {
       }
     ]);
 
+    // Calculate user rank
+    const allUsers = await User.aggregate([
+      {
+        $unwind: '$quizHistory'
+      },
+      {
+        $group: {
+          _id: '$_id',
+          username: { $first: '$username' },
+          totalScore: { $sum: '$quizHistory.score' },
+          totalQuestions: { $sum: '$quizHistory.totalQuestions' }
+        }
+      },
+      {
+        $addFields: {
+          averageScore: {
+            $cond: {
+              if: { $eq: ['$totalQuestions', 0] },
+              then: 0,
+              else: { $divide: ['$totalScore', '$totalQuestions'] }
+            }
+          }
+        }
+      },
+      {
+        $sort: { averageScore: -1 }
+      }
+    ]);
+    let userRank = null;
+    if (req.user) {
+      const idx = allUsers.findIndex(u => u.username === req.user.username);
+      userRank = idx >= 0 ? idx + 1 : null;
+    }
+
     res.json({
       success: true,
       data: {
-        leaderboard
+        leaderboard,
+        userRank
       }
     });
   } catch (error) {

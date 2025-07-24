@@ -49,13 +49,15 @@ export default function Dashboard() {
       if (!lbData.success) throw new Error(lbData.message || "Failed to fetch leaderboard");
       setStats(statsData.data.stats);
       setLeaderboard(lbData.data.leaderboard);
-      // Find user rank
-      if (user) {
+      // Use userRank from backend if available
+      if (user && lbData.data.userRank) {
+        setRank(lbData.data.userRank);
+      } else if (user) {
         const idx = lbData.data.leaderboard.findIndex(u => u.username === user.username);
         setRank(idx >= 0 ? idx + 1 : null);
       }
-      // Compute streak
-      setStreak(computeStreak(statsData.data.stats.recentActivity));
+      // Use streak from backend if available
+      setStreak(statsData.data.stats.streak ?? computeStreak(statsData.data.stats.recentActivity));
     } catch (err) {
       setError(err.message || "Failed to fetch stats/leaderboard");
     } finally {
@@ -110,8 +112,8 @@ export default function Dashboard() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
             <BarChart3 className="w-8 h-8 text-purple-500" />
-            {user && user.username ? (
-              <>Welcome back, {user.username.charAt(0).toUpperCase() + user.username.slice(1)}! <span className="text-2xl">👋</span></>
+            {user && (user.firstName || user.username) ? (
+              <>Welcome back, {(user.firstName ? user.firstName : user.username).charAt(0).toUpperCase() + (user.firstName ? user.firstName : user.username).slice(1)}! <span className="text-2xl">👋</span></>
             ) : (
               <>Dashboard</>
             )}

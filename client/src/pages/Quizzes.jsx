@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import QuizCard from '../components/QuizCard';
 import { useAuth } from "../contexts/AuthContext";
+import { Footer } from '../components/Footer';
 
 const subjectIcons = {
   Mathematics: <HelpCircle className="w-8 h-8 text-white" />, 
@@ -75,8 +76,14 @@ export const Quizzes = () => {
       .then(data => {
         if (!data.success) throw new Error('Failed to fetch leaderboard');
         const leaderboard = data.data.leaderboard;
-        const idx = leaderboard.findIndex(u => u._id === user._id);
-        setStats(prev => prev.map((stat, i) => i === 3 ? { ...stat, value: idx !== -1 ? `#${idx + 1}` : '#-' } : stat));
+        let rankValue = '#-';
+        if (data.data.userRank) {
+          rankValue = `#${data.data.userRank}`;
+        } else {
+          const idx = leaderboard.findIndex(u => u._id === user._id);
+          rankValue = idx !== -1 ? `#${idx + 1}` : '#-';
+        }
+        setStats(prev => prev.map((stat, i) => i === 3 ? { ...stat, value: rankValue } : stat));
       })
       .catch(() => {});
   }, [user]);
@@ -135,7 +142,11 @@ export const Quizzes = () => {
           className="mb-6 mt-8"
         >
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-            Welcome back, Seerat! <span className="text-2xl">👋</span>
+            {user && (user.firstName || user.username) ? (
+              <>Welcome back, {(user.firstName ? user.firstName : user.username).charAt(0).toUpperCase() + (user.firstName ? user.firstName : user.username).slice(1)}! <span className="text-2xl">👋</span></>
+            ) : (
+              <>Welcome!</>
+            )}
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-300">Ready to challenge your mind with some quizzes?</p>
         </motion.div>
@@ -263,6 +274,7 @@ export const Quizzes = () => {
           </>
         )}
       </main>
+      <Footer />
     </div>
   );
 };
