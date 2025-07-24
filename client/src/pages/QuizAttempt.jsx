@@ -89,7 +89,7 @@ export default function QuizAttempt() {
     setAiLoading(false);
     setAiError(null);
     try {
-      const res = await fetch(`/api/quizzes/${quiz._id}/submit`, {
+      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/quizzes/${quiz._id}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -103,7 +103,7 @@ export default function QuizAttempt() {
       const maxTries = 15; // up to 6 seconds (closest to 5s)
       const poll = async () => {
         tries++;
-        const res = await fetch(`/api/quizzes/${quiz._id}/result/${attemptId}`, { credentials: 'include' });
+        const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/quizzes/${quiz._id}/result/${attemptId}`, { credentials: 'include' });
         const resultData = await res.json();
         if (resultData.success && resultData.data && resultData.data.aiAnalysis && Object.keys(resultData.data.aiAnalysis).length > 0 && resultData.data.aiAnalysis.overallFeedback && resultData.data.aiAnalysis.detailedFeedback) {
           setAiLoading(false);

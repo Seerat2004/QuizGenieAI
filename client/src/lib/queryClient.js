@@ -7,8 +7,13 @@ async function throwIfResNotOk(res) {
   }
 }
 
+function withApiBase(url) {
+  if (url.startsWith('http')) return url;
+  return `${process.env.REACT_APP_API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
 export async function apiRequest(method, url, data) {
-  const res = await fetch(url, {
+  const res = await fetch(withApiBase(url), {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -21,7 +26,7 @@ export async function apiRequest(method, url, data) {
 
 export const getQueryFn = ({ on401: unauthorizedBehavior }) => 
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0], {
+    const res = await fetch(withApiBase(queryKey[0]), {
       credentials: "include",
     });
 

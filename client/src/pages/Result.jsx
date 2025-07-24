@@ -52,7 +52,7 @@ export default function Result() {
       setError('No result to display');
       return;
     }
-    fetch(`/api/quizzes/${quizId}/result/${attemptId}`, { credentials: 'include' })
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/api/quizzes/${quizId}/result/${attemptId}`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (!data.success) throw new Error(data.message || 'Failed to fetch result');
@@ -76,7 +76,7 @@ export default function Result() {
     if (!result || aiAnalysis) return;
     let isMounted = true;
     const poll = () => {
-      fetch(`/api/quizzes/${quizId}/result/${attemptId}`, { credentials: 'include' })
+      fetch(`${process.env.REACT_APP_API_BASE_URL}/api/quizzes/${quizId}/result/${attemptId}`, { credentials: 'include' })
         .then(res => res.json())
         .then(data => {
           if (!data.success) return;
@@ -96,7 +96,7 @@ export default function Result() {
 
   // Manual check for feedback
   const handleManualCheck = () => {
-    fetch(`/api/quizzes/${quizId}/result/${attemptId}`, { credentials: 'include' })
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/api/quizzes/${quizId}/result/${attemptId}`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (data.success && data.data.aiAnalysis) {

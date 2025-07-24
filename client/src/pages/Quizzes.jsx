@@ -35,7 +35,7 @@ export const Quizzes = () => {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch('/api/quizzes')
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/api/quizzes`)
       .then(res => res.json())
       .then(data => {
         if (!data.success) throw new Error('Failed to fetch quizzes');
@@ -57,7 +57,7 @@ export const Quizzes = () => {
   useEffect(() => {
     if (!user) return;
     // Fetch user stats
-    fetch('/api/users/stats', { credentials: 'include' })
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/api/users/stats`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (!data.success) throw new Error('Failed to fetch stats');
@@ -71,7 +71,7 @@ export const Quizzes = () => {
       })
       .catch(() => {});
     // Fetch leaderboard to get user rank
-    fetch('/api/users/leaderboard?limit=100', { credentials: 'include' })
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/api/users/leaderboard?limit=100`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (!data.success) throw new Error('Failed to fetch leaderboard');
@@ -95,7 +95,7 @@ export const Quizzes = () => {
       return;
     }
     try {
-      const res = await fetch(`/api/quizzes/${quiz._id}/start`, {
+      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/quizzes/${quiz._id}/start`, {
         method: 'POST',
         credentials: 'include',
       });

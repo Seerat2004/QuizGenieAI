@@ -57,7 +57,7 @@ export default function AdminDashboard() {
     setLoading(true);
     setError("");
     if (tab === "users") {
-      fetch("/api/admin/users", { credentials: "include" })
+      fetch(`${process.env.REACT_APP_API_BASE_URL}/api/admin/users`, { credentials: "include" })
         .then((res) => res.json())
         .then((data) => {
           if (data.success) setUsers(data.data);
@@ -69,7 +69,7 @@ export default function AdminDashboard() {
           setLoading(false);
         });
     } else if (tab === "attempts") {
-      fetch("/api/admin/attempts", { credentials: "include" })
+      fetch(`${process.env.REACT_APP_API_BASE_URL}/api/admin/attempts`, { credentials: "include" })
         .then((res) => res.json())
         .then((data) => {
           if (data.success) setAttempts(data.data);
@@ -88,7 +88,7 @@ export default function AdminDashboard() {
     if (tab !== "quizzes" || !user || user.role !== "admin") return;
     setQuizLoading(true);
     setQuizError("");
-    fetch("/api/quizzes?limit=1000", { credentials: "include" })
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/api/quizzes?limit=1000`, { credentials: "include" })
       .then(res => res.json())
       .then(data => {
         if (data.success) setQuizzes(data.data.quizzes);
@@ -191,7 +191,7 @@ export default function AdminDashboard() {
   const handleQuizSubmit = async (e) => {
     e.preventDefault();
     const method = editingQuiz ? "PUT" : "POST";
-    const url = editingQuiz ? `/api/quizzes/${editingQuiz._id}` : "/api/quizzes";
+    const url = editingQuiz ? `${process.env.REACT_APP_API_BASE_URL}/api/quizzes/${editingQuiz._id}` : `${process.env.REACT_APP_API_BASE_URL}/api/quizzes`;
     try {
       const res = await fetch(url, {
         method,
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
   const handleDeleteQuiz = async () => {
     if (!quizToDelete) return;
     try {
-      const res = await fetch(`/api/quizzes/${quizToDelete._id}`, {
+      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/quizzes/${quizToDelete._id}`, {
         method: "DELETE",
         credentials: "include"
       });
