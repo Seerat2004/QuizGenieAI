@@ -66,7 +66,7 @@ const quizSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Subject is required'],
     enum: {
-      values: ['Mathematics', 'Science', 'History', 'Geography', 'Literature', 'Computer Science', 'General Knowledge'],
+      values: ['Mathematics', 'Science', 'History', 'Geography', 'Literature', 'Computer Science', 'General Knowledge', 'Civics', 'DSA', 'Web Development'],
       message: 'Invalid subject'
     }
   },

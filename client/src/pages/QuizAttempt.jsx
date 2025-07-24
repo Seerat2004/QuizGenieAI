@@ -39,6 +39,7 @@ export default function QuizAttempt() {
         options: Array.isArray(q.answers) ? q.answers.map(a => a.text) : [],
         correctIndex: Array.isArray(q.answers) ? q.answers.findIndex(a => a.isCorrect) : -1,
         explanation: q.explanation || '',
+        _id: q._id
       }))
     };
   }
@@ -48,8 +49,11 @@ export default function QuizAttempt() {
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState(null);
   // Track answers as array of { questionId, selectedAnswer }
-  const [answers, setAnswers] = useState([]);
+  const [answers, setAnswers] = useState(() => questions.map(() => null));
   const [timer, setTimer] = useState(QUESTION_TIME);
+  const [submitting, setSubmitting] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
 
   useEffect(() => {
     setTimer(QUESTION_TIME);
@@ -77,18 +81,47 @@ export default function QuizAttempt() {
     // Save the last answer
     const updatedAnswers = [...answers];
     updatedAnswers[current] = { questionId: q._id, selectedAnswer: q.options[selected] };
+    console.log('Submitting quiz:', {
+      attemptId,
+      answers: updatedAnswers.filter(a => a && a.questionId && typeof a.selectedAnswer === 'string' && a.selectedAnswer.length > 0)
+    });
+    setSubmitting(true);
+    setAiLoading(false);
+    setAiError(null);
     try {
       const res = await fetch(`/api/quizzes/${quiz._id}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ attemptId, answers: updatedAnswers.map(a => a || { questionId: '', selectedAnswer: '' }) })
+        body: JSON.stringify({ attemptId, answers: updatedAnswers.filter(a => a && a.questionId && typeof a.selectedAnswer === 'string' && a.selectedAnswer.length > 0) })
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Failed to submit quiz');
-      // After submit, navigate to result and trigger dashboard refresh
-      navigate('/result', { state: { quizId: quiz._id, attemptId, refreshDashboard: true } });
+      // Poll for AI feedback before navigating
+      setAiLoading(true);
+      let tries = 0;
+      const maxTries = 15; // up to 6 seconds (closest to 5s)
+      const poll = async () => {
+        tries++;
+        const res = await fetch(`/api/quizzes/${quiz._id}/result/${attemptId}`, { credentials: 'include' });
+        const resultData = await res.json();
+        if (resultData.success && resultData.data && resultData.data.aiAnalysis && Object.keys(resultData.data.aiAnalysis).length > 0 && resultData.data.aiAnalysis.overallFeedback && resultData.data.aiAnalysis.detailedFeedback) {
+          setAiLoading(false);
+          setSubmitting(false);
+          navigate('/result', { state: { quizId: quiz._id, attemptId, refreshDashboard: true } });
+        } else if (tries < maxTries) {
+          setTimeout(poll, 1000);
+        } else {
+          setAiLoading(false);
+          setSubmitting(false);
+          setAiError('AI feedback is taking too long. Please check the result page later.');
+          navigate('/result', { state: { quizId: quiz._id, attemptId, refreshDashboard: true } });
+        }
+      };
+      poll();
     } catch (err) {
+      setSubmitting(false);
+      setAiLoading(false);
       alert(err.message || 'Failed to submit quiz');
     }
   };
@@ -103,6 +136,19 @@ export default function QuizAttempt() {
         <div className="text-center mt-32">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">This quiz has a malformed question or options.</h2>
           <Button onClick={() => navigate('/quizzes')}>Go to Quizzes</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (submitting || aiLoading) {
+    return (
+      <div className="min-h-screen bg-[#f6f7fb] dark:bg-[#10182A] flex items-center justify-center">
+        <Navigation />
+        <div className="text-center mt-32">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{aiLoading ? 'Generating AI feedback...' : 'Submitting quiz...'}</h2>
+          <div className="text-lg text-gray-600 dark:text-gray-300 mb-2">This may take up to 30 seconds. Please wait...</div>
+          {aiError && <div className="text-red-500 mt-2">{aiError}</div>}
         </div>
       </div>
     );

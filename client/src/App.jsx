@@ -15,6 +15,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import History from "./pages/History";
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth();
@@ -42,6 +43,7 @@ function Router() {
         <Route path="/result" element={<RequireAuth><Result /></RequireAuth>} />
         <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
         <Route path="/admin" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
+        <Route path="/history" element={<RequireAuth><History /></RequireAuth>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

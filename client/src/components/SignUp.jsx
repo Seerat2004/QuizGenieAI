@@ -139,7 +139,7 @@ export const SignUp = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Username Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="username" className="text-gray-700 dark:text-white-300">
+                    <Label htmlFor="username" className="text-gray-700 dark:text-white">
                       Username
                     </Label>
                     <div className="relative">
@@ -158,7 +158,7 @@ export const SignUp = () => {
                   </div>
                   {/* First Name Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="firstName" className="text-gray-700 dark:text-gray-300">
+                    <Label htmlFor="firstName" className="text-gray-700 dark:text-white">
                       First Name
                     </Label>
                     <div className="relative">
@@ -176,7 +176,7 @@ export const SignUp = () => {
                   </div>
                   {/* Last Name Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="lastName" className="text-gray-700 dark:text-gray-300">
+                    <Label htmlFor="lastName" className="text-gray-700 dark:text-white">
                       Last Name
                     </Label>
                     <div className="relative">
@@ -194,7 +194,7 @@ export const SignUp = () => {
                   </div>
                   {/* Email Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-gray-700 dark:text-gray-300">
+                    <Label htmlFor="email" className="text-gray-700 dark:text-white">
                       Email Address
                     </Label>
                     <div className="relative">
@@ -213,7 +213,7 @@ export const SignUp = () => {
                   </div>
                   {/* Password Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">
+                    <Label htmlFor="password" className="text-gray-700 dark:text-white">
                       Password
                     </Label>
                     <div className="relative">
@@ -239,7 +239,7 @@ export const SignUp = () => {
                   </div>
                   {/* Confirm Password Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword" className="text-gray-700 dark:text-gray-300">
+                    <Label htmlFor="confirmPassword" className="text-gray-700 dark:text-white">
                       Confirm Password
                     </Label>
                     <div className="relative">

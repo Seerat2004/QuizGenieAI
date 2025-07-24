@@ -4,6 +4,8 @@ const Quiz = require('../models/Quiz');
 const QuizAttempt = require('../models/QuizAttempt');
 const User = require('../models/User');
 const { protect, authorize, optionalAuth } = require('../middleware/auth');
+const axios = require('axios');
+require('dotenv').config();
 
 const router = express.Router();
 
@@ -128,7 +130,11 @@ router.get('/:id/result/:attemptId', protect, async (req, res) => {
       percentage: attempt.score,
       timeTaken: attempt.endTime - attempt.startTime,
       questions: attempt.answers.map(answer => {
-        const question = quiz.questions.find(q => q._id.toString() === answer.questionId);
+        const question = quiz.questions.find(q => q._id.toString() === answer.questionId.toString());
+        console.log('Result debug:', {
+          answer,
+          foundQuestion: question
+        });
         return {
           question: question?.text || 'Question not found',
           selectedAnswer: answer.selectedAnswer,
@@ -139,6 +145,8 @@ router.get('/:id/result/:attemptId', protect, async (req, res) => {
       })
     };
 
+    const aiAnalysis = attempt.aiAnalysis || null;
+
     res.json({
       success: true,
       data: {
@@ -148,7 +156,8 @@ router.get('/:id/result/:attemptId', protect, async (req, res) => {
           startTime: attempt.startTime,
           endTime: attempt.endTime,
           status: attempt.status
-        }
+        },
+        aiAnalysis
       }
     });
   } catch (error) {
@@ -174,19 +183,19 @@ router.post('/:id/start', protect, async (req, res) => {
       });
     }
 
-    // Check if user already has an active attempt
-    const existingAttempt = await QuizAttempt.findOne({
-      userId: req.user._id,
-      quizId: quiz._id,
-      status: 'in_progress'
-    });
+    // Remove the check for existing active attempts to allow unlimited attempts
+    // const existingAttempt = await QuizAttempt.findOne({
+    //   userId: req.user._id,
+    //   quizId: quiz._id,
+    //   status: 'in_progress'
+    // });
 
-    if (existingAttempt) {
-      return res.status(400).json({
-        success: false,
-        message: 'You already have an active attempt for this quiz'
-      });
-    }
+    // if (existingAttempt) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'You already have an active attempt for this quiz'
+    //   });
+    // }
 
     // Create new attempt
     const attempt = new QuizAttempt({
@@ -262,17 +271,35 @@ router.post('/:id/submit', protect, [
       });
     }
 
-    // Find active attempt
+    // Find active attempt using attemptId
+    const { attemptId } = req.body;
+    console.log('Quiz submit debug:', {
+      attemptId,
+      userId: req.user._id,
+      quizId: quiz._id
+    });
     const attempt = await QuizAttempt.findOne({
+      _id: attemptId,
       userId: req.user._id,
       quizId: quiz._id,
       status: 'in_progress'
     });
-
     if (!attempt) {
+      // Debug: log all attempts for this user and quiz
+      const allAttempts = await QuizAttempt.find({
+        userId: req.user._id,
+        quizId: quiz._id
+      });
+      console.error('No active attempt found. All attempts for user/quiz:', allAttempts);
       return res.status(400).json({
         success: false,
-        message: 'No active attempt found for this quiz'
+        message: 'No active attempt found for this quiz',
+        debug: {
+          attemptId,
+          userId: req.user._id,
+          quizId: quiz._id,
+          allAttempts
+        }
       });
     }
 
@@ -282,17 +309,23 @@ router.post('/:id/submit', protect, [
     const detailedAnswers = [];
 
     for (const answer of answers) {
-      const question = quiz.questions.find(q => q._id.toString() === answer.questionId);
+      // Log the IDs being compared
+      console.log('Scoring debug:', {
+        submittedQuestionId: answer.questionId,
+        quizQuestionIds: quiz.questions.map(q => q._id.toString())
+      });
+      const question = quiz.questions.find(q => q._id.toString() === answer.questionId.toString());
       if (question) {
         const isCorrect = question.answers.find(a => a.isCorrect)?.text === answer.selectedAnswer;
         if (isCorrect) correctAnswers++;
-        
         detailedAnswers.push({
           questionId: answer.questionId,
           selectedAnswer: answer.selectedAnswer,
           correctAnswer: question.answers.find(a => a.isCorrect)?.text,
           isCorrect
         });
+      } else {
+        console.error('No matching question found for submitted answer:', answer);
       }
     }
 
@@ -319,14 +352,80 @@ router.post('/:id/submit', protect, [
       }
     });
 
+    // --- AI Feedback Integration (async) ---
+    (async () => {
+      let aiAnalysis = null;
+      try {
+        // Build detailed question results for the prompt
+        const detailedResults = detailedAnswers.map((a, i) => {
+          const q = quiz.questions.find(q => q._id.toString() === a.questionId.toString());
+          return `Q${i+1}:
+Question: ${q?.text || 'N/A'}
+Your Answer: ${a.selectedAnswer}
+Correct Answer: ${a.correctAnswer}
+${a.isCorrect ? 'Result: Correct' : 'Result: Incorrect'}${q?.explanation ? `\nExplanation: ${q.explanation}` : ''}`;
+        }).join('\n\n');
+        // Prepare improved prompt for feedback
+        const prompt = `A student just completed a quiz titled "${quiz.title}" on the subject "${quiz.subject}".\n\nScore: ${score}/${100}\nCorrect Answers: ${correctAnswers}/${totalQuestions}\nTime Spent: ${attempt.timeSpent || 'N/A'} seconds\n\nHere is a detailed review of the questions and results:\n${detailedResults}\n\nPlease provide:\n1. A short, encouraging feedback paragraph for the student.\n2. For each incorrect answer, provide a detailed explanation and what the student should review.\n3. List any weak topics or concepts based on their answers.\n4. Recommend what to study or which quizzes to take next.\nRespond with ONLY valid JSON, no extra text, no markdown, no explanation. Format: {\"overallFeedback\": string, \"detailedFeedback\": array, \"weakTopics\": array, \"recommendations\": array}`;
+
+        const response = await axios.post(
+          'https://openrouter.ai/api/v1/chat/completions',
+          {
+            model: 'openrouter/auto',
+            messages: [
+              { role: 'system', content: 'You are an educational AI assistant.' },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 1500
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': 'https://quizgenieai.local',
+              'X-Title': 'QuizGenieAI'
+            }
+          }
+        );
+        let aiText = response.data.choices[0].message.content;
+        // Extract first JSON object from the response, even if extra text is present
+        let jsonMatch = aiText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            aiAnalysis = JSON.parse(jsonMatch[0]);
+          } catch (e) {
+            console.error('AI feedback JSON parse error:', e, 'Extracted JSON:', jsonMatch[0]);
+          }
+        } else {
+          console.error('No JSON object found in AI response:', aiText);
+        }
+        // Transform weakTopics to array of objects if it's an array of strings
+        if (aiAnalysis && Array.isArray(aiAnalysis.weakTopics)) {
+          aiAnalysis.weakTopics = aiAnalysis.weakTopics.map(wt =>
+            typeof wt === 'string' ? { topic: wt } : wt
+          );
+        }
+        attempt.aiAnalysis = aiAnalysis;
+        await attempt.save();
+      } catch (aiErr) {
+        console.error('AI feedback integration error:', aiErr);
+        aiAnalysis = { overallFeedback: 'AI feedback is currently unavailable. Please try again later.', detailedFeedback: [], weakTopics: [], recommendations: [] };
+        attempt.aiAnalysis = aiAnalysis;
+        await attempt.save();
+      }
+    })();
+    // --- End AI Feedback Integration (async) ---
+
     res.json({
       success: true,
       message: 'Quiz submitted successfully',
       data: {
-        score,
+        score, // percentage
         correctAnswers,
         totalQuestions,
         attemptId: attempt._id
+        // aiAnalysis will be available on result fetch
       }
     });
   } catch (error) {
